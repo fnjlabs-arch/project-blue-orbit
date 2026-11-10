@@ -21,7 +21,7 @@ class PlanScreen extends StatelessWidget {
   /// Number of profiles in this plan (also the badge count per brand).
   final int profiles;
 
-  /// Display price, e.g. '$5'.
+  /// Display price, e.g. '$7'.
   final String price;
 
   /// Highlights this plan as the recommended one.
