@@ -5,8 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Social Clone — One phone. Many TikTok and Facebook accounts.</title>
 <meta name="description" content="Social Clone is a multi-account browser for TikTok and Facebook workers. Isolated profiles, one tap to switch, no general browsing. Android download, license-code activation.">
+<link rel="canonical" href="https://socialclone.app/">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="styles.css">
+<!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "ddf3d68f09544589a26a3a60a3404ba7"}'></script><!-- End Cloudflare Web Analytics -->
+<!-- Google Analytics (GA4) — REPLACE G-K4PXB9JLX6 with the real Measurement ID (see ~/workspace/analytics-install/ANALYTICS-GA4-SETUP.md) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-K4PXB9JLX6"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-K4PXB9JLX6');</script>
 </head>
 <body>
 <header class="topbar">
@@ -19,7 +24,6 @@
       <a href="#what">What it does</a>
       <a href="#how">How it works</a>
       <a href="#pricing">Pricing</a>
-      <a href="#teachers">For teachers</a>
       <a href="#faq">FAQ</a>
     </nav>
     <a class="btn btn-small" href="https://github.com/fnjlabs-arch/project-blue-orbit/releases/download/test-build/social-clone-test.apk">Download for Android</a>
@@ -52,7 +56,7 @@
 
   <section class="strip">
     <div class="wrap strip-inner">
-      <span>Built for workers</span><span>Built for teachers &amp; students</span><span>Focused, not general browsing</span>
+      <span>Built for workers</span><span>One tap to switch accounts</span><span>Focused, not general browsing</span>
     </div>
   </section>
 
@@ -75,7 +79,7 @@
     <div class="wrap">
       <h2>How it works</h2>
       <div class="steps">
-        <div class="step"><span class="step-no">1</span><h3>Get a license code</h3><p>Get a code from your teacher or distributor for the plan you need.</p></div>
+        <div class="step"><span class="step-no">1</span><h3>Buy a plan</h3><p>Choose a plan below and pay. Your license code is sent to you after payment is confirmed.</p></div>
         <div class="step"><span class="step-no">2</span><h3>Paste it once</h3><p>Open Social Clone, paste the code into the single activation field, and the app detects your plan automatically.</p></div>
         <div class="step"><span class="step-no">3</span><h3>Create profiles &amp; switch</h3><p>Create your profiles and switch between them any time with one tap.</p></div>
       </div>
@@ -92,6 +96,7 @@
           <p class="price"><span class="currency">$</span>7</p>
           <p class="price-note">License code: SC5 &middot; 30 characters</p>
           <ul><li>5 isolated profiles</li><li>TikTok + Facebook per profile</li><li>One-field activation</li></ul>
+          <p><a class="btn" href="mailto:info@toolzo.app?subject=Buy%3A%20Social%20Clone%20%E2%80%94%205%20profiles%20(%247)&amp;body=Hi%2C%20I%20would%20like%20to%20buy%20Social%20Clone%20(5%20profiles%2C%20%247).%20Please%20send%20me%20the%20secure%20payment%20link.">Buy &mdash; $7</a></p>
         </article>
         <article class="price-card featured">
           <p class="badge">BEST VALUE</p>
@@ -99,24 +104,10 @@
           <p class="price"><span class="currency">$</span>9</p>
           <p class="price-note">License code: SC10 &middot; 40 characters</p>
           <ul><li>10 isolated profiles</li><li>TikTok + Facebook per profile</li><li>One-field activation</li></ul>
+          <p><a class="btn" href="mailto:info@toolzo.app?subject=Buy%3A%20Social%20Clone%20%E2%80%94%2010%20profiles%20(%249)&amp;body=Hi%2C%20I%20would%20like%20to%20buy%20Social%20Clone%20(10%20profiles%2C%20%249).%20Please%20send%20me%20the%20secure%20payment%20link.">Buy &mdash; $9</a></p>
         </article>
       </div>
-      <p class="note center">Get your license code from your teacher or distributor.</p>
-    </div>
-  </section>
-
-  <section id="teachers" class="section section-alt">
-    <div class="wrap teachers">
-      <div>
-        <h2>For teachers</h2>
-        <p class="section-lede">Give every student their own working account, without sharing logins.</p>
-        <p>Teachers buy license codes in bulk &mdash; <strong>10, 20 or 100 at a time</strong> &mdash; upfront, and pass one code to each student. A teacher dashboard for managing codes and accounts is in preparation and will be announced here when it is live.</p>
-      </div>
-      <div class="card teacher-card">
-        <h3>Bulk codes</h3>
-        <p><strong>10 / 20 / 100</strong> codes per batch</p>
-        <p>One code per student. Simple to hand out, simple to track.</p>
-      </div>
+      <p class="note center">How it works: click <strong>Buy</strong> on the plan you want &mdash; it opens an email to <a href="mailto:info@toolzo.app">info@toolzo.app</a> with the plan already filled in. Secure checkout is being set up with Paddle and is currently under review; until it opens, we send you a secure payment link, and your license code is sent after payment is confirmed. No payment is taken by email.</p>
     </div>
   </section>
 
@@ -126,7 +117,12 @@
       <details open><summary>Which devices does Social Clone work on?</summary><p>Android phones, for now. Download the app directly from the button on this page.</p></details>
       <details><summary>Is Social Clone on the Play Store?</summary><p>Not yet. The Android app is available as a direct download from this site.</p></details>
       <details><summary>Does it include a VPN?</summary><p>No. There is no bundled VPN in phase 1.</p></details>
-      <details><summary>How does a license code work?</summary><p>Paste the code into the app&rsquo;s single activation field. The app detects whether it is a 5-profile (SC5) or 10-profile (SC10) code automatically. In the current build, activation works offline on the device. Device-bound licensing will arrive with the teacher dashboard; it is not live yet, and this site does not promise it today.</p></details>
+      <details><summary>How does a license code work?</summary><p>Paste the code into the app&rsquo;s single activation field. The app detects whether it is a 5-profile (SC5) or 10-profile (SC10) code automatically. In the current build, activation works offline on the device.</p></details>
+      <details><summary>Can I run multiple TikTok accounts on one phone?</summary><p>Yes. Create a separate isolated profile for each TikTok account in Social Clone, then switch between profiles with one tap. Each profile keeps its own login, so you do not have to log in and out repeatedly.</p></details>
+      <details><summary>Can I use two Facebook accounts at the same time?</summary><p>Yes, in the same way. Each profile can hold its own Facebook login as well as TikTok, and you switch profiles instead of switching accounts inside one app.</p></details>
+      <details><summary>Is Social Clone a multi-login app?</summary><p>Yes, that is its core idea: multi-login for TikTok and Facebook workers. One app, many isolated profiles, one tap to switch. It is not a general browser, and it does not clone other apps.</p></details>
+      <details><summary>Is this like Dual Space or Parallel Space?</summary><p>The idea is similar, running more than one account on one phone, but Social Clone is different: it is a focused TikTok and Facebook kiosk only, not a general app-cloning tool, and it is not affiliated with Dual Space or Parallel Space.</p></details>
+      <details><summary>Do my accounts get mixed up?</summary><p>No. Each profile is isolated with its own cookies and login state, so feeds, logins and sessions do not bleed into each other.</p></details>
       <details><summary>Can I browse the whole web in it?</summary><p>No. Social Clone is a TikTok and Facebook kiosk only &mdash; no Gmail, no address bar, no general browsing.</p></details>
     </div>
   </section>
@@ -134,7 +130,7 @@
   <section id="contact" class="section section-alt">
     <div class="wrap">
       <h2>Contact</h2>
-      <p>Contact details for license codes, teacher accounts and support will be published here soon.</p>
+      <p>Questions, or want to buy a license code? Email <a href="mailto:info@toolzo.app">info@toolzo.app</a> &mdash; tell us the plan you want (5 profiles, $7, or 10 profiles, $9) and we will send you a secure payment link. Your code is sent after payment is confirmed.</p>
     </div>
   </section>
 </main>
@@ -146,5 +142,6 @@
     <p class="powered">Powered by SadSha</p>
   </div>
 </footer>
+<!-- Infolinks --><script type="text/javascript">var infolinks_pid = 3449387; var infolinks_wsid = 0;</script><script type="text/javascript" src="//resources.infolinks.com/js/infolinks_main.js"></script>
 </body>
 </html>
