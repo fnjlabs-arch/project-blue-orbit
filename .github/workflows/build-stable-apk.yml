@@ -247,6 +247,12 @@ jobs:
         run: flutter build apk --release --flavor stable --target-platform android-arm,android-arm64,android-x64 --no-tree-shake-icons
 
       - name: Upload stable APK
+        # Artifact storage quota on the free plan is only 500 MB and the
+        # old test artifacts already exceed it (2026-11-23: the AI stable
+        # run 45150811373 failed here with "Artifact storage quota has
+        # been hit"). The GitHub release below is the real distribution,
+        # so a quota failure here must not block it.
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: social-clone-apk
