@@ -1,0 +1,273 @@
+# Social Clone — one-click STABLE APK build (RELEASE).
+#
+# How to use:
+#   1. Open the repo on GitHub -> Actions tab -> "Build Stable APK".
+#   2. Click "Run workflow".
+#   3. Wait ~20-40 min. The APK is published to the fixed "stable"
+#      release, so it can be downloaded straight onto a phone from one
+#      permanent link (no laptop, no ZIP):
+#      https://github.com/fnjlabs-arch/project-blue-orbit/releases/download/stable/social-clone.apk
+#      (also kept in the run's Artifacts as a backup, and mirrored to R2)
+#
+# This is a RELEASE build of the stable flavor (app name "Social Clone",
+# package com.sadsha.socialclone) signed with the REAL SadSha release
+# keystore from repo secrets — NOT the debug keystore. It installs as a
+# different app from the alpha test builds (different package name and
+# signature), so the alpha build must be UNINSTALLED first.
+#
+# Required repo secrets (Actions secrets, same four as the AI repo and
+# the app repos) — THESE ARE NOT SET IN THIS REPO YET (checked
+# 2026-11-23): add them before running this workflow, or the run fails
+# fast at "Create release key file":
+#   ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD,
+#   ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+# The keystore password and the key password are usually the same value;
+# the "Verify release keystore" step below tries both secrets and fails
+# fast (before the long build) if neither unlocks the keystore. It never
+# prints any secret value.
+#
+# KNOWN LIMITS (same as the test build):
+# - GATED build: license gate + $7/$9 monthly plans (SC5/SC10),
+#   dashboard socialclone.app.
+# - Launcher icon is Social Clone's two-circle mark.
+#
+name: Build Stable APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Free Disk Space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: false
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: false
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Create release key file
+        working-directory: apps/weblibre
+        run: |
+          set -euo pipefail
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "ERROR: ANDROID_KEYSTORE_BASE64 secret is not set in this repo. Add the four ANDROID_KEYSTORE_* secrets first." >&2
+            exit 1
+          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -di > key.jks
+          chmod 600 key.jks
+          test -s key.jks
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+
+      # Fails fast (seconds) if the keystore secrets are wrong, instead of
+      # failing at the signing step after a ~30 min build. Tries the key
+      # password secret first, then the keystore password secret; whichever
+      # unlocks the keystore AND signs a dummy jar becomes KEY_PASSWORD
+      # for the build step. Prints only PASS/FAIL, never secret values.
+      - name: Verify release keystore
+        working-directory: apps/weblibre
+        run: |
+          set -euo pipefail
+          KEY_JKS="$PWD/key.jks"
+          ALIAS="$ANDROID_KEY_ALIAS"
+          mkdir -p "$RUNNER_TEMP/keycheck"
+          cd "$RUNNER_TEMP/keycheck"
+          echo "check" > dummy.txt
+          jar cf dummy.jar dummy.txt
+          WINNER=""
+          for NAME in ANDROID_KEY_PASSWORD ANDROID_KEYSTORE_PASSWORD; do
+            PASS="${!NAME}"
+            if keytool -list -keystore "$KEY_JKS" -storepass "$PASS" >/dev/null 2>&1 \
+              && jarsigner -keystore "$KEY_JKS" -storepass "$PASS" -keypass "$PASS" \
+                -signedjar signed.jar dummy.jar "$ALIAS" >/dev/null 2>&1; then
+              echo "Keystore check PASS with $NAME"
+              WINNER="$PASS"
+              break
+            else
+              echo "Keystore check FAIL with $NAME"
+            fi
+          done
+          if [ -z "$WINNER" ]; then
+            echo "ERROR: neither ANDROID_KEY_PASSWORD nor ANDROID_KEYSTORE_PASSWORD unlocks the release keystore." >&2
+            exit 1
+          fi
+          echo "KEY_PASSWORD=$WINNER" >> "$GITHUB_ENV"
+        env:
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.x'
+
+      - name: Install Android NDK
+        run: |
+          set -euo pipefail
+          ANDROID_NDK_VERSION="$(
+            sed -n 's/^weblibre\.ndkVersion[[:space:]]*=[[:space:]]*//p' \
+              apps/weblibre/android/gradle.properties
+          )"
+          if [[ -z "$ANDROID_NDK_VERSION" ]]; then
+            echo "Missing weblibre.ndkVersion in apps/weblibre/android/gradle.properties" >&2
+            exit 1
+          fi
+          set +e
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$ANDROID_NDK_VERSION"
+          sdkmanager_status=${PIPESTATUS[1]}
+          set -e
+          if [[ $sdkmanager_status -ne 0 ]]; then
+            exit "$sdkmanager_status"
+          fi
+          test -f "$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION/source.properties"
+          {
+            echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION"
+            echo "ANDROID_NDK_ROOT=$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION"
+            echo "NDK_HOME=$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION"
+          } >> "$GITHUB_ENV"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.5
+          cache: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Cache Go build dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+            ~/go/bin/gomobile
+            ~/go/bin/gobind
+          key: ${{ runner.os }}-go-runtime-${{ hashFiles('native/go_mobile_runtime/pins.env') }}
+          restore-keys: |
+            ${{ runner.os }}-go-runtime-
+
+      - name: Setup workspace dependencies
+        run: |
+          dart pub global activate melos 7.8.1
+          melos bootstrap
+
+      - name: Merge localizations
+        run: python3 scripts/merge_l10n_arb.py
+
+      - name: Update external assets
+        run: melos run update-assets --no-select
+
+      - name: Build components
+        run: melos run build-components --no-select
+
+      - name: Checkout native runtime sources
+        run: |
+          set -euo pipefail
+          source native/go_mobile_runtime/pins.env
+
+          git clone https://github.com/SagerNet/sing-box.git "$RUNNER_TEMP/sing-box"
+          git -C "$RUNNER_TEMP/sing-box" checkout "$SING_BOX_TAG"
+          test "$(git -C "$RUNNER_TEMP/sing-box" rev-parse HEAD)" = "$SING_BOX_COMMIT"
+
+          git clone https://github.com/tladesignz/IPtProxy.git "$RUNNER_TEMP/IPtProxy"
+          git -C "$RUNNER_TEMP/IPtProxy" checkout "$IPTPROXY_TAG"
+          test "$(git -C "$RUNNER_TEMP/IPtProxy" rev-parse HEAD)" = "$IPTPROXY_COMMIT"
+          git -C "$RUNNER_TEMP/IPtProxy" submodule update --init dnstt
+
+      - name: Build native gomobile runtime
+        env:
+          SING_BOX_SOURCE: ${{ runner.temp }}/sing-box
+          IPTPROXY_SOURCE: ${{ runner.temp }}/IPtProxy
+        run: melos run build-go-runtime --no-select
+
+      # Disk-cleanup fix (2026-10-29): run 40952142465 died in the Flutter
+      # step with "No space left on device" — NOT a compile error. The
+      # initial cleanup runs before NDK/Flutter/Go/native-runtime installs
+      # consume disk, so free space again right before the APK build.
+      # Everything removed here is already consumed by this point and is
+      # NOT needed by the Flutter step: Docker images (build uses none),
+      # Go caches (native runtime already built), the cloned native
+      # sources in RUNNER_TEMP, and Android SDK components this build
+      # never uses (emulator, system-images, sources, docs). NDK,
+      # Flutter, Java, Go toolchain binaries, Gradle caches, and the
+      # built native .so files are deliberately NOT touched.
+      - name: Free disk space before APK build
+        run: |
+          set -euo pipefail
+          echo "=== Disk before cleanup ==="
+          df -h /
+          # Docker: unused by this build entirely.
+          docker system prune -af --volumes || true
+          # Go caches: native gomobile runtime is already built above.
+          go clean -cache -modcache || true
+          # Cloned native sources: only needed for the runtime build above.
+          rm -rf "$RUNNER_TEMP/sing-box" "$RUNNER_TEMP/IPtProxy" || true
+          # Android SDK parts this build never uses (guarded: skip if unset).
+          if [ -n "${ANDROID_HOME:-}" ]; then
+            rm -rf "$ANDROID_HOME/emulator" "$ANDROID_HOME/system-images" \
+              "$ANDROID_HOME/sources" "$ANDROID_HOME/docs" || true
+          fi
+          # Large unused toolchains that the initial cleanup may have left.
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost \
+            /opt/microsoft/powershell /usr/share/swift || true
+          echo "=== Disk after cleanup ==="
+          df -h /
+          AVAIL_KB="$(df --output=avail / | tail -1 | tr -d ' ')"
+          echo "Available on / : ${AVAIL_KB} KB"
+          if [ "$AVAIL_KB" -lt 3145728 ]; then
+            echo "ERROR: less than 3 GB free after cleanup; Flutter build would run out of disk again." >&2
+            exit 1
+          fi
+
+      - name: Build release APK (stable flavor)
+        working-directory: apps/weblibre
+        # KEY_PASSWORD was verified by the "Verify release keystore" step
+        # and exported via GITHUB_ENV; KEY_PATH/KEY_ALIAS come from here.
+        # build.gradle's release signingConfig reads all three from env.
+        env:
+          KEY_PATH: ${{ github.workspace }}/apps/weblibre/key.jks
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: flutter build apk --release --flavor stable --target-platform android-arm,android-arm64,android-x64 --no-tree-shake-icons
+
+      - name: Upload stable APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: social-clone-apk
+          path: apps/weblibre/build/app/outputs/apk/stable/release/*.apk
+
+      - name: Publish direct-download release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          APK="$(ls apps/weblibre/build/app/outputs/apk/stable/release/*.apk | head -1)"
+          cp "$APK" social-clone.apk
+          if gh release view stable >/dev/null 2>&1; then
+            gh release upload stable social-clone.apk --clobber
+          else
+            gh release create stable social-clone.apk \
+              --title "Social Clone - Stable APK (latest)" \
+              --notes "Latest stable build (release, stable flavor, signed with the SadSha release key). Uninstall the alpha test build first — different package name and signature."
+          fi
+
+      - name: Cleanup
+        if: always()
+        working-directory: apps/weblibre
+        run: rm -f key.jks
