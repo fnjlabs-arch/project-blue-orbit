@@ -10,10 +10,13 @@
 
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../core/filesystem.dart';
 import '../../../domain/entities/profile.dart';
+import '../../geckoview/domain/providers/selected_tab.dart';
+import '../../geckoview/domain/providers/tab_session.dart';
 import '../../geckoview/domain/providers/tab_state.dart';
 import '../../geckoview/domain/repositories/tab.dart';
 import '../../geckoview/features/tabs/data/entities/tab_mode.dart';
@@ -433,7 +436,18 @@ class _ProfileHome extends HookConsumerWidget {
       for (final extra in existing.skip(1)) {
         await tabRepository.closeTab(extra);
       }
+      // Re-tapping the app whose tab is already selected is a refresh:
+      // a tab left half-loaded by a stalled network stays dead forever
+      // if it is only re-selected, so reload it instead. Tab switches
+      // (a different tab is selected) still just resume, as before.
+      final wasAlreadySelected =
+          ref.read(selectedTabProvider) == existing.first;
       await tabRepository.selectTab(existing.first);
+      if (wasAlreadySelected) {
+        await ref
+            .read(tabSessionProvider(tabId: existing.first).notifier)
+            .reload();
+      }
       return;
     }
 
@@ -546,11 +560,15 @@ class _ProfileHome extends HookConsumerWidget {
                         host == 'tempmail36.app' ||
                         host.endsWith('.tempmail36.app'),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.mail, size: 22),
-                      SizedBox(width: 8),
+                      SvgPicture.asset(
+                        'assets/icon/tempmail36_logo.svg',
+                        width: 28,
+                        height: 28,
+                      ),
+                      const SizedBox(width: 8),
                       Text(
                         'TempMail36',
                         style: TextStyle(
