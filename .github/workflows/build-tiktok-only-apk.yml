@@ -28,10 +28,10 @@
 # - The TempMail tab opens the profile's permanent inbox, which needs
 #   the TM36_PERMANENT_KEY repo secret (same value as
 #   fnjlabs-arch/social-clone-ai). If the secret is NOT set, the build
-#   still succeeds but the TempMail tab falls back to a random 24h
-#   inbox — the "Check permanent read key" step below warns loudly
-#   instead of failing, so the key can be added and the workflow
-#   re-run with no code change.
+#   FAILS at the "Check permanent read key" step — a build without the
+#   key ships a TempMail tab that opens a random 24h inbox instead of
+#   the permanent one (shipped once by mistake on 25 Nov 2026), so it
+#   must never build silently. Add the secret and re-run.
 # - This build is PRIVATE: it never touches the public socialclone.app
 #   website or its download button/link, and it publishes to its own
 #   "tiktok-only" release, never to "test-build" or "stable".
@@ -154,16 +154,16 @@ jobs:
       # The permanent @ai.socialclone.app inboxes can only be READ with
       # the shared key (TempMail36 worker secret PERMANENT_READ_KEY).
       # The key itself is never printed here — only whether it is set.
-      # An unset key does NOT fail the build: the APK still works for
-      # TikTok and the profiles still seed, but TempMail tabs fall back
-      # to a random 24h inbox. Add the TM36_PERMANENT_KEY repo secret
-      # (same value as fnjlabs-arch/social-clone-ai) and re-run.
+      # An unset key FAILS the build: shipping without it puts every
+      # profile on a random 24h inbox. Add the TM36_PERMANENT_KEY repo
+      # secret (same value as fnjlabs-arch/social-clone-ai) and re-run.
       - name: Check permanent read key
         env:
           TM36_PERMANENT_KEY: ${{ secrets.TM36_PERMANENT_KEY }}
         run: |
           if [ -z "$TM36_PERMANENT_KEY" ]; then
-            echo "::warning::TM36_PERMANENT_KEY is not set in this repo — TempMail tabs will open a random 24h inbox instead of the permanent @ai.socialclone.app ones. Add the secret and re-run."
+            echo "::error::TM36_PERMANENT_KEY is not set in this repo — refusing to build: TempMail tabs would open a random 24h inbox instead of the permanent @ai.socialclone.app ones. Add the TM36_PERMANENT_KEY repo secret and re-run."
+            exit 1
           else
             echo "TM36_PERMANENT_KEY is set (length ${#TM36_PERMANENT_KEY})."
           fi
