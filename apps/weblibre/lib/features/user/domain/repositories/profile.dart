@@ -29,6 +29,7 @@ import 'package:weblibre/core/startup/profile_discovery.dart';
 import 'package:weblibre/core/startup/startup_config_store.dart';
 import 'package:weblibre/core/uuid.dart' as ids;
 import 'package:weblibre/domain/entities/profile.dart';
+import 'package:weblibre/features/kiosk/domain/allowlist.dart';
 import 'package:weblibre/features/license/domain/license_repository.dart';
 import 'package:weblibre/features/user/data/models/auth_settings.dart';
 import 'package:weblibre/features/web_push/domain/providers.dart';
@@ -99,6 +100,7 @@ class ProfileRepository extends _$ProfileRepository {
 
   Future<Profile> createProfile({
     required String name,
+    String? permanentEmail,
     AuthSettings? authSettings,
   }) async {
     // Social Clone licensing: cap profiles at the licensed tier maximum.
@@ -111,7 +113,28 @@ class ProfileRepository extends _$ProfileRepository {
       throw ProfileLimitReachedException(maxProfiles);
     }
 
-    final profile = Profile.create(name: name, authSettings: authSettings);
+    // Social Clone: every profile owns one permanent
+    // @ai.socialclone.app address, stored on the profile itself. A
+    // profile created without one would open TempMail36 with no
+    // address, and the site would mint a random 24-hour inbox instead
+    // of the profile's permanent one — so assign the first still-free
+    // permanent address here, at the single point every creation path
+    // funnels through (home Add Profile, the profile editor, the
+    // pre-seed). An explicitly passed address is never overridden.
+    // The cap above guarantees a free address exists whenever creation
+    // is allowed (fewer profiles than the 10-address list).
+    final email =
+        permanentEmail ??
+        permanentProfileEmails.firstWhereOrNull(
+          (candidate) =>
+              !existing.any((p) => p.permanentEmail == candidate),
+        );
+
+    final profile = Profile.create(
+      name: name,
+      permanentEmail: email,
+      authSettings: authSettings,
+    );
     if (!await filesystem.createNewProfile(profile)) {
       throw Exception('Could not create profile');
     }

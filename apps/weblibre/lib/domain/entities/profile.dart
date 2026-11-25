@@ -32,25 +32,43 @@ class Profile with FastEquatable {
   @CopyWithField(immutable: true)
   final String id;
   final String name;
+
+  /// The profile's permanent TempMail36 inbox
+  /// (`<local-part>@ai.socialclone.app`), stored per profile so a
+  /// rename or a delete of another profile can never shift it onto a
+  /// different address. Null for profiles created before this field
+  /// existed (or by hand) — those fall back to the legacy
+  /// creation-order mapping in tempMailUrlForProfile.
+  final String? permanentEmail;
+
   final AuthSettings authSettings;
 
   late final uuidValue = UuidValue.fromString(id);
 
   static String getNewProfileId() => uuid.v7();
 
-  Profile({required this.id, required this.name, AuthSettings? authSettings})
-    : authSettings = authSettings ?? AuthSettings.withDefaults();
+  Profile({
+    required this.id,
+    required this.name,
+    this.permanentEmail,
+    AuthSettings? authSettings,
+  }) : authSettings = authSettings ?? AuthSettings.withDefaults();
 
-  factory Profile.create({required String name, AuthSettings? authSettings}) {
+  factory Profile.create({
+    required String name,
+    String? permanentEmail,
+    AuthSettings? authSettings,
+  }) {
     return Profile(
       id: getNewProfileId(),
       name: name,
+      permanentEmail: permanentEmail,
       authSettings: authSettings,
     );
   }
 
   @override
-  List<Object?> get hashParameters => [id, name, authSettings];
+  List<Object?> get hashParameters => [id, name, permanentEmail, authSettings];
 
   factory Profile.fromJson(Map<String, dynamic> json) =>
       _$ProfileFromJson(json);

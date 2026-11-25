@@ -16,7 +16,7 @@ final kioskHomeLevelProvider = KioskHomeLevelProvider._();
 ///
 /// The home has two levels: the profiles list (the door that never
 /// closes — profile creation and switching live there) and one
-/// profile's home (its TikTok / Facebook buttons). `false` is the
+/// profile's home (its TikTok button). `false` is the
 /// profiles list, `true` is a profile home.
 ///
 /// The level lives in a provider rather than in the home widget's own
@@ -31,7 +31,7 @@ final class KioskHomeLevelProvider
   ///
   /// The home has two levels: the profiles list (the door that never
   /// closes — profile creation and switching live there) and one
-  /// profile's home (its TikTok / Facebook buttons). `false` is the
+  /// profile's home (its TikTok button). `false` is the
   /// profiles list, `true` is a profile home.
   ///
   /// The level lives in a provider rather than in the home widget's own
@@ -73,7 +73,7 @@ String _$kioskHomeLevelHash() => r'8f3a1c9d4e5b60718293a4b5c6d7e8f90a1b2c3d';
 ///
 /// The home has two levels: the profiles list (the door that never
 /// closes — profile creation and switching live there) and one
-/// profile's home (its TikTok / Facebook buttons). `false` is the
+/// profile's home (its TikTok button). `false` is the
 /// profiles list, `true` is a profile home.
 ///
 /// The level lives in a provider rather than in the home widget's own

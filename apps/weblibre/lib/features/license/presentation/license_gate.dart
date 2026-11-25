@@ -8,10 +8,13 @@
  * License, or (at your option) any later version.
  */
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
+import '../../kiosk/domain/profile_seeding.dart';
 import '../domain/license_repository.dart';
 import 'license_activation_screen.dart';
 import 'plan_screens.dart';
@@ -35,6 +38,18 @@ class LicenseGate extends HookConsumerWidget {
     // → 2 activation. The funnel starts at the first plan — there is
     // no welcome screen in front of it.
     final step = useState(0);
+
+    // One-time migration, the moment a license is present: pre-seed the
+    // permanent TempMail36 profiles (mia … zoe, up to the licensed cap).
+    // Guarded by its own persisted flag inside [seedPermanentProfiles],
+    // so it runs once ever and never blocks the app if it fails.
+    final licensed = license.value != null;
+    useEffect(() {
+      if (licensed) {
+        unawaited(seedPermanentProfiles(ref));
+      }
+      return null;
+    }, [licensed]);
 
     Widget locked() {
       switch (step.value) {

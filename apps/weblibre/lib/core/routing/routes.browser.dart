@@ -113,7 +113,7 @@ class SearchRoute extends GoRouteData with $SearchRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     // Social Clone kiosk mode: URL/search input is disabled app-wide.
-    // Users may only open TikTok and Facebook via the home shortcuts.
+    // Users may only open TikTok via the home shortcut.
     // All entry points (address bar, home pill, shortcuts) land here.
     return const _UrlInputDisabledScreen();
   }
@@ -143,7 +143,7 @@ class _UrlInputDisabledScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Only TikTok and Facebook are available in this app.',
+                'Only TikTok is available in this app.',
                 textAlign: TextAlign.center,
                 style: theme.textTheme.titleMedium,
               ),

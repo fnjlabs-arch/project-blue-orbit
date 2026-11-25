@@ -494,7 +494,7 @@ class _BrowserViewState extends ConsumerState<BrowserView>
               ),
             ),
           ),
-          // Social Clone kiosk: simplified home with only TikTok/Facebook.
+          // Social Clone kiosk: simplified home with only TikTok.
           if (showHome) const Positioned.fill(child: SocialCloneHome()),
           const Positioned.fill(child: GestureFeedbackOverlay()),
         ],

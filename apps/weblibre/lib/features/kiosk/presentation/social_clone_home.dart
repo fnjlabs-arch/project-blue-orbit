@@ -31,7 +31,7 @@ import 'brand_icons.dart';
 ///
 /// Two levels (see [KioskHomeLevel]): the profiles list, where
 /// profiles are created and switched, and one profile's home with its
-/// two big app buttons. Android Back walks the same staircase in
+/// TikTok button. Android Back walks the same staircase in
 /// reverse: site → profile home → profiles list.
 class SocialCloneHome extends HookConsumerWidget {
   const SocialCloneHome({super.key});
@@ -409,8 +409,8 @@ class _ProfileCard extends StatelessWidget {
   }
 }
 
-/// Level 2: one profile's home — its name, the two big app buttons,
-/// and a smaller TempMail36 button below them.
+/// Level 2: one profile's home — its name, the TikTok button, and a
+/// smaller TempMail36 button below it.
 class _ProfileHome extends HookConsumerWidget {
   const _ProfileHome();
 
@@ -468,6 +468,15 @@ class _ProfileHome extends HookConsumerWidget {
     final active = profiles?.firstWhereOrNull(
       (profile) => profile.uuidValue == filesystem.selectedProfile,
     );
+    // Index of the active profile in creation order: LEGACY fallback
+    // only, for profiles created before a permanent address was stored
+    // on the profile itself (profile 1 = mia, …, profile 10 = zoe).
+    // The stored [Profile.permanentEmail] is the authority whenever it
+    // exists, so a rename or a delete can never shift addresses.
+    final activeIndex = profiles?.indexWhere(
+          (profile) => profile.uuidValue == filesystem.selectedProfile,
+        ) ??
+        -1;
 
     return Scaffold(
       body: SafeArea(
@@ -519,28 +528,14 @@ class _ProfileHome extends HookConsumerWidget {
                     host == 'tiktok.com' || host.endsWith('.tiktok.com'),
               ),
             ),
-            const SizedBox(height: 16),
-            _AppButton(
-              label: 'Facebook',
-              background: facebookBrandColor,
-              foreground: Colors.white,
-              accent: Colors.white,
-              leading: const FacebookBadge(size: 36),
-              onTap: () => _open(
-                ref,
-                homeUrl: facebookHomeUrl,
-                siteMatches: (host) =>
-                    host == 'facebook.com' || host.endsWith('.facebook.com'),
-              ),
-            ),
             const SizedBox(height: 20),
-            // Third, smaller button — deliberately NOT one of the two big
-            // app buttons above. Opens TempMail36 as a new tab inside
-            // this same profile via the same _open() pattern: Back
-            // returns to this profile home (tab kept), re-tapping
-            // resumes the same tab (duplicates closed). Each profile
-            // gets its own TempMail tab/inbox because tabs belong to
-            // the active profile's session (profile switch restarts).
+            // Smaller button — deliberately NOT the big app button
+            // above. Opens TempMail36 as a new tab inside this same
+            // profile via the same _open() pattern: Back returns to
+            // this profile home (tab kept), re-tapping resumes the same
+            // tab (duplicates closed). Each profile gets its own
+            // permanent inbox because tabs belong to the active
+            // profile's session (profile switch restarts).
             Center(
               child: SizedBox(
                 height: 48,
@@ -553,13 +548,22 @@ class _ProfileHome extends HookConsumerWidget {
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  onPressed: () => _open(
-                    ref,
-                    homeUrl: tempMailHomeUrl,
-                    siteMatches: (host) =>
-                        host == 'tempmail36.app' ||
-                        host.endsWith('.tempmail36.app'),
-                  ),
+                  // Disabled until the profiles list has loaded: opening
+                  // TempMail with no active profile would silently use the
+                  // plain URL (no permanent address), which is exactly how
+                  // a profile ends up on a random 24-hour inbox.
+                  onPressed: active == null
+                      ? null
+                      : () => _open(
+                          ref,
+                          homeUrl: tempMailUrlForProfile(
+                            permanentEmail: active.permanentEmail,
+                            legacyIndex: activeIndex,
+                          ),
+                          siteMatches: (host) =>
+                              host == 'tempmail36.app' ||
+                              host.endsWith('.tempmail36.app'),
+                        ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [

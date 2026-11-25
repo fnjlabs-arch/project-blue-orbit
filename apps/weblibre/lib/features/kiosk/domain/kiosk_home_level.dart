@@ -16,7 +16,7 @@ part 'kiosk_home_level.g.dart';
 ///
 /// The home has two levels: the profiles list (the door that never
 /// closes — profile creation and switching live there) and one
-/// profile's home (its TikTok / Facebook buttons). `false` is the
+/// profile's home (its TikTok button). `false` is the
 /// profiles list, `true` is a profile home.
 ///
 /// The level lives in a provider rather than in the home widget's own
@@ -30,7 +30,7 @@ class KioskHomeLevel extends _$KioskHomeLevel {
   @override
   bool build() => false;
 
-  /// Enters the active profile's home (its two app buttons).
+  /// Enters the active profile's home (its TikTok button).
   void enterProfileHome() => state = true;
 
   /// Returns to the profiles list.

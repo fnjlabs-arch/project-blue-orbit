@@ -9,6 +9,8 @@ part of 'profile.dart';
 abstract class _$ProfileCWProxy {
   Profile name(String name);
 
+  Profile permanentEmail(String? permanentEmail);
+
   Profile authSettings(AuthSettings? authSettings);
 
   /// Creates a new instance with the provided field values.
@@ -18,7 +20,11 @@ abstract class _$ProfileCWProxy {
   /// ```dart
   /// Profile(...).copyWith(id: 12, name: "My name")
   /// ```
-  Profile call({String name, AuthSettings? authSettings});
+  Profile call({
+    String name,
+    String? permanentEmail,
+    AuthSettings? authSettings,
+  });
 }
 
 /// Callable proxy for `copyWith` functionality.
@@ -30,6 +36,10 @@ class _$ProfileCWProxyImpl implements _$ProfileCWProxy {
 
   @override
   Profile name(String name) => call(name: name);
+
+  @override
+  Profile permanentEmail(String? permanentEmail) =>
+      call(permanentEmail: permanentEmail);
 
   @override
   Profile authSettings(AuthSettings? authSettings) =>
@@ -45,6 +55,7 @@ class _$ProfileCWProxyImpl implements _$ProfileCWProxy {
   @override
   Profile call({
     Object? name = const $CopyWithPlaceholder(),
+    Object? permanentEmail = const $CopyWithPlaceholder(),
     Object? authSettings = const $CopyWithPlaceholder(),
   }) {
     return Profile(
@@ -53,6 +64,10 @@ class _$ProfileCWProxyImpl implements _$ProfileCWProxy {
           ? _value.name
           // ignore: cast_nullable_to_non_nullable
           : name as String,
+      permanentEmail: permanentEmail == const $CopyWithPlaceholder()
+          ? _value.permanentEmail
+          // ignore: cast_nullable_to_non_nullable
+          : permanentEmail as String?,
       authSettings: authSettings == const $CopyWithPlaceholder()
           ? _value.authSettings
           // ignore: cast_nullable_to_non_nullable
@@ -75,6 +90,7 @@ extension $ProfileCopyWith on Profile {
 Profile _$ProfileFromJson(Map<String, dynamic> json) => Profile(
   id: json['id'] as String,
   name: json['name'] as String,
+  permanentEmail: json['permanentEmail'] as String?,
   authSettings: json['authSettings'] == null
       ? null
       : AuthSettings.fromJson(json['authSettings'] as Map<String, dynamic>),
@@ -83,5 +99,6 @@ Profile _$ProfileFromJson(Map<String, dynamic> json) => Profile(
 Map<String, dynamic> _$ProfileToJson(Profile instance) => <String, dynamic>{
   'id': instance.id,
   'name': instance.name,
+  'permanentEmail': instance.permanentEmail,
   'authSettings': instance.authSettings.toJson(),
 };

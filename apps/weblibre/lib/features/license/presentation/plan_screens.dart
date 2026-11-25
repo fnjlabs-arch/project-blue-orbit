@@ -15,8 +15,8 @@ import '../../kiosk/presentation/brand_icons.dart';
 /// One plan "flash" screen in the pre-activation funnel: the 5-profile
 /// plan first, then the 10-profile plan, then activation.
 ///
-/// Each plan is visualized as one Facebook badge + one TikTok badge per
-/// profile — 5 profiles means 5 Facebook accounts and 5 TikTok accounts.
+/// Each plan is visualized as one TikTok badge per profile — 5 profiles
+/// means 5 TikTok accounts.
 class PlanScreen extends StatelessWidget {
   /// Number of profiles in this plan (also the badge count per brand).
   final int profiles;
@@ -108,16 +108,7 @@ class PlanScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
-              _BadgeRow(count: profiles, facebook: true),
-              const SizedBox(height: 4),
-              Text(
-                'Facebook accounts',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 14),
-              _BadgeRow(count: profiles, facebook: false),
+              _BadgeRow(count: profiles),
               const SizedBox(height: 4),
               Text(
                 'TikTok accounts',
@@ -129,7 +120,7 @@ class PlanScreen extends StatelessWidget {
               _DetailRow(text: '$profiles fully separate profiles'),
               const SizedBox(height: 10),
               const _DetailRow(
-                text: 'TikTok and Facebook ready in every profile',
+                text: 'TikTok ready in every profile',
               ),
               const SizedBox(height: 10),
               const _DetailRow(
@@ -160,9 +151,8 @@ class PlanScreen extends StatelessWidget {
 /// A centered, wrapping row of brand badges (one per profile).
 class _BadgeRow extends StatelessWidget {
   final int count;
-  final bool facebook;
 
-  const _BadgeRow({required this.count, required this.facebook});
+  const _BadgeRow({required this.count});
 
   @override
   Widget build(BuildContext context) {
@@ -171,22 +161,20 @@ class _BadgeRow extends StatelessWidget {
       spacing: 8,
       runSpacing: 8,
       children: [
-        for (var i = 0; i < count; i++) _BrandBadge(facebook: facebook),
+        for (var i = 0; i < count; i++) const _BrandBadge(),
       ],
     );
   }
 }
 
-/// Circular brand badge with the real logo glyph: the Facebook "f"
-/// disc and the TikTok note — never a generic music note.
+/// Circular brand badge with the real logo glyph: the TikTok note —
+/// never a generic music note.
 class _BrandBadge extends StatelessWidget {
-  final bool facebook;
-
-  const _BrandBadge({required this.facebook});
+  const _BrandBadge();
 
   @override
   Widget build(BuildContext context) {
-    return facebook ? const FacebookBadge() : const TikTokBadge();
+    return const TikTokBadge();
   }
 }
 

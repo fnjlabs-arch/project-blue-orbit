@@ -44,7 +44,7 @@ const _socialCloneFilterListUrl =
 /// Origin with its optimized (annoyances-inclusive) filter lists,
 /// plus two kiosk decisions of our own: the Social Clone filter list
 /// is added, and app links are set to NEVER leave the browser (no
-/// "Open this link in Facebook?" prompt — links open inside, always).
+/// "Open this link in TikTok?" prompt — links open inside, always).
 ///
 /// Gated on the onboarding revision: a profile whose revision is
 /// already current is left untouched. If the uBlock install does not

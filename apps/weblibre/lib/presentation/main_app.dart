@@ -128,7 +128,7 @@ class MainApp extends HookConsumerWidget {
           builder: (context, child) {
             // LicenseGate hides the whole app until a license code is
             // activated on this device (Social Clone licensing).
-            // AllowlistGuard closes tabs that leave TikTok/Facebook.
+            // AllowlistGuard closes tabs that leave TikTok.
             return LicenseGate(
               child: AllowlistGuard(
                 child: _AppMediaQueryOverrides(

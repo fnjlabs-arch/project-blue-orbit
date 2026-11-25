@@ -45,7 +45,7 @@ class AllowlistGuard extends HookConsumerWidget {
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Only TikTok and Facebook are available here.'),
+                content: Text('Only TikTok is available here.'),
               ),
             );
           }

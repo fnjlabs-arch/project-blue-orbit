@@ -10,8 +10,8 @@
 
 /// Social Clone is always a kiosk.
 ///
-/// This fork exists for exactly one purpose — a locked-down TikTok /
-/// Facebook multi-profile app — so the browser chrome upstream ships
+/// This fork exists for exactly one purpose — a locked-down TikTok
+/// multi-profile app — so the browser chrome upstream ships
 /// (tab strip, address bar, toolbars, FAB) is never built here, and
 /// the web content always gets the full screen. The flag exists so the
 /// few upstream widgets that must know can ask one question in one
