@@ -1,0 +1,213 @@
+# Social Clone TikTok-Only — one-click TEST APK build (private, for Qasim only).
+#
+# How to use:
+#   1. Open the repo on GitHub -> Actions tab -> "Build TikTok-Only APK".
+#   2. Click "Run workflow" (branch: tiktok-only).
+#   3. Wait ~20-40 min. The APK is published to the fixed "tiktok-only"
+#      release, so it can be downloaded straight onto a phone from one
+#      permanent link (no laptop, no ZIP):
+#      https://github.com/fnjlabs-arch/project-blue-orbit/releases/download/tiktok-only/social-clone-tiktok-only.apk
+#      (also kept in the run's Artifacts as a backup)
+# The APK is a RELEASE build of the alpha flavor (optimized, like the
+# real product — debug builds are too slow to judge performance on the
+# budget phones this app targets). It is signed with the repo's
+# committed TEST keystore (apps/weblibre/android/app/debug.keystore,
+# wired to the alpha flavor in build.gradle): every test build carries
+# the SAME signing key, so a new test build installs over the previous
+# alpha one — no uninstall needed. That key is a throwaway test key,
+# never the Play Store key; real releases still go through build.yml
+# with the real upload key on the stable flavor.
+#
+# TikTok-only differences from the regular test build:
+# - Facebook is removed entirely (button, allowlist hosts, plan copy).
+#   Only TikTok + TempMail36 remain.
+# - The 10 permanent @ai.socialclone.app profiles (mia … zoe) are
+#   pre-seeded on first launch after license activation, and every
+#   profile owns its permanent address, so creating a profile can never
+#   fall back to a random 24-hour inbox.
+# - The TempMail tab opens the profile's permanent inbox, which needs
+#   the TM36_PERMANENT_KEY repo secret (same value as
+#   fnjlabs-arch/social-clone-ai). If the secret is NOT set, the build
+#   still succeeds but the TempMail tab falls back to a random 24h
+#   inbox — the "Check permanent read key" step below warns loudly
+#   instead of failing, so the key can be added and the workflow
+#   re-run with no code change.
+# - This build is PRIVATE: it never touches the public socialclone.app
+#   website or its download button/link, and it publishes to its own
+#   "tiktok-only" release, never to "test-build" or "stable".
+
+name: Build TikTok-Only APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Free Disk Space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: false
+          dotnet: true
+          haskell: true
+          large-packages: false
+          docker-images: false
+          swap-storage: false
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.x'
+
+      - name: Install Android NDK
+        run: |
+          set -euo pipefail
+          ANDROID_NDK_VERSION="$(
+            sed -n 's/^weblibre\.ndkVersion[[:space:]]*=[[:space:]]*//p' \
+              apps/weblibre/android/gradle.properties
+          )"
+          if [[ -z "$ANDROID_NDK_VERSION" ]]; then
+            echo "Missing weblibre.ndkVersion in apps/weblibre/android/gradle.properties" >&2
+            exit 1
+          fi
+          set +e
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$ANDROID_NDK_VERSION"
+          sdkmanager_status=${PIPESTATUS[1]}
+          set -e
+          if [[ $sdkmanager_status -ne 0 ]]; then
+            echo "sdkmanager failed with status $sdkmanager_status" >&2
+            exit "$sdkmanager_status"
+          fi
+          test -f "$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION/source.properties"
+          {
+            echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION"
+            echo "ANDROID_NDK_ROOT=$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION"
+            echo "NDK_HOME=$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION"
+          } >> "$GITHUB_ENV"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.5
+          cache: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Cache Go build dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+            ~/go/bin/gomobile
+            ~/go/bin/gobind
+          key: ${{ runner.os }}-go-runtime-${{ hashFiles('native/go_mobile_runtime/pins.env') }}
+          restore-keys: |
+            ${{ runner.os }}-go-runtime-
+
+      - name: Setup workspace dependencies
+        run: |
+          dart pub global activate melos 7.8.1
+          melos bootstrap
+
+      - name: Merge localizations
+        run: python3 scripts/merge_l10n_arb.py
+
+      - name: Update external assets
+        run: melos run update-assets --no-select
+
+      - name: Build components
+        run: melos run build-components --no-select
+
+      - name: Checkout native runtime sources
+        run: |
+          set -euo pipefail
+          source native/go_mobile_runtime/pins.env
+
+          git clone https://github.com/SagerNet/sing-box.git "$RUNNER_TEMP/sing-box"
+          git -C "$RUNNER_TEMP/sing-box" checkout "$SING_BOX_TAG"
+          test "$(git -C "$RUNNER_TEMP/sing-box" rev-parse HEAD)" = "$SING_BOX_COMMIT"
+
+          git clone https://github.com/tladesignz/IPtProxy.git "$RUNNER_TEMP/IPtProxy"
+          git -C "$RUNNER_TEMP/IPtProxy" checkout "$IPTPROXY_TAG"
+          test "$(git -C "$RUNNER_TEMP/IPtProxy" rev-parse HEAD)" = "$IPTPROXY_COMMIT"
+          git -C "$RUNNER_TEMP/IPtProxy" submodule update --init dnstt
+
+      - name: Build native gomobile runtime
+        env:
+          SING_BOX_SOURCE: ${{ runner.temp }}/sing-box
+          IPTPROXY_SOURCE: ${{ runner.temp }}/IPtProxy
+        run: melos run build-go-runtime --no-select
+
+      # The permanent @ai.socialclone.app inboxes can only be READ with
+      # the shared key (TempMail36 worker secret PERMANENT_READ_KEY).
+      # The key itself is never printed here — only whether it is set.
+      # An unset key does NOT fail the build: the APK still works for
+      # TikTok and the profiles still seed, but TempMail tabs fall back
+      # to a random 24h inbox. Add the TM36_PERMANENT_KEY repo secret
+      # (same value as fnjlabs-arch/social-clone-ai) and re-run.
+      - name: Check permanent read key
+        env:
+          TM36_PERMANENT_KEY: ${{ secrets.TM36_PERMANENT_KEY }}
+        run: |
+          if [ -z "$TM36_PERMANENT_KEY" ]; then
+            echo "::warning::TM36_PERMANENT_KEY is not set in this repo — TempMail tabs will open a random 24h inbox instead of the permanent @ai.socialclone.app ones. Add the secret and re-run."
+          else
+            echo "TM36_PERMANENT_KEY is set (length ${#TM36_PERMANENT_KEY})."
+          fi
+
+      - name: Build release APK (alpha flavor, TikTok-only)
+        working-directory: apps/weblibre
+        # Signing fix (2026-10-26): the alpha flavor's signingConfigs.debug
+        # is overridden by buildTypes.release for the alphaRelease variant,
+        # and the release config's storeFile comes from KEY_PATH, which this
+        # test workflow never set — hence "Keystore file not set for signing
+        # config release" on the previous run. Point the release config at
+        # the committed TEST keystore for this step only (public
+        # android/androiddebugkey credentials, test-only by design). This
+        # touches nothing in build.yml: the stable track still gets its real
+        # key from its own secrets there.
+        env:
+          KEY_PATH: ${{ github.workspace }}/apps/weblibre/android/app/debug.keystore
+          KEY_ALIAS: androiddebugkey
+          KEY_PASSWORD: android
+        run: flutter build apk --release --flavor alpha --target-platform android-arm,android-arm64,android-x64 --no-tree-shake-icons --dart-define=TM36_PERMANENT_KEY=${{ secrets.TM36_PERMANENT_KEY }}
+
+      - name: Upload TikTok-only APK
+        # Artifact storage quota on the free plan is only 500 MB and the
+        # old test artifacts already exceed it (2026-11-23: the AI stable
+        # run 45150811373 failed here with "Artifact storage quota has
+        # been hit"). The tiktok-only release below is the real
+        # distribution, so a quota failure here must not block it.
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: social-clone-tiktok-only-apk
+          path: apps/weblibre/build/app/outputs/apk/alpha/release/*.apk
+
+      - name: Publish direct-download release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          APK="$(ls apps/weblibre/build/app/outputs/apk/alpha/release/*.apk | head -1)"
+          cp "$APK" social-clone-tiktok-only.apk
+          if gh release view tiktok-only >/dev/null 2>&1; then
+            gh release upload tiktok-only social-clone-tiktok-only.apk --clobber
+          else
+            gh release create tiktok-only social-clone-tiktok-only.apk \
+              --title "Social Clone TikTok-Only - Test APK (latest)" \
+              --notes "Latest TikTok-only test build (TikTok + TempMail36, no Facebook; 10 pre-seeded permanent profiles). Private build for Qasim — install over the previous alpha test build, no uninstall needed."
+          fi
